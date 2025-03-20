@@ -4,10 +4,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Update this part
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000'],
+      allowedOrigins: [
+        'http://localhost:3000',
+        'https://atlas-cinema-guru-ecru.vercel.app',
+        'https://atlas-cinema-guru-6pdcxpsaf-frankblations-projects.vercel.app',
+      ],
     },
   },
 };

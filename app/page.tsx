@@ -1,175 +1,184 @@
-import { Search, Home, Heart, Clock, Settings, Bell, Menu } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import Image from "next/image"
+'use client'
 
-export default function CinemaGuru() {
+import { useEffect, useState, useRef, useCallback } from 'react'
+import MovieCard from '@/components/MovieCard'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+interface Title {
+  id: string
+  title: string
+  synopsis: string
+  released: number
+  genre: string
+  image: string
+  favorited: boolean
+  watchLater: boolean
+}
+
+const GENRES = [
+  'Romance', 'Horror', 'Drama', 'Action', 'Mystery',
+  'Fantasy', 'Thriller', 'Western', 'Sci-Fi', 'Adventure'
+]
+
+export default function CinemaGuruHomePage() {
+  const [titles, setTitles] = useState<Title[]>([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loading, setLoading] = useState(false)
+
+  const [search, setSearch] = useState('')
+  const [minYear, setMinYear] = useState(1990)
+  const [maxYear, setMaxYear] = useState(2024)
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+
+  const observer = useRef<IntersectionObserver | null>(null)
+
+  const lastMovieRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading) return
+    if (observer.current) observer.current.disconnect()
+
+    observer.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage((prevPage) => prevPage + 1)
+      }
+    })
+
+    if (node) observer.current.observe(node)
+  }, [loading, hasMore])
+
+  const fetchTitles = async () => {
+    setLoading(true)
+
+    try {
+      const genreQuery = selectedGenres.join(',')
+      const res = await fetch(
+        `/api/titles?page=${page}&minYear=${minYear}&maxYear=${maxYear}&genres=${genreQuery}&search=${search}`,
+        { credentials: 'include' }
+      )
+
+      const data = await res.json()
+
+      setTitles((prevTitles) => page === 1 ? data.title : [...prevTitles, ...data.title])
+
+      if (!data.title || data.title.length === 0) {
+        setHasMore(false)
+      } else {
+        setHasMore(true)
+      }
+    } catch (error) {
+      console.error('Error fetching titles:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    setPage(1)
+    fetchTitles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGenres, minYear, maxYear, search])
+
+  useEffect(() => {
+    fetchTitles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page])
+
+  const toggleGenre = (genre: string) => {
+    if (selectedGenres.includes(genre)) {
+      setSelectedGenres(selectedGenres.filter((g) => g !== genre))
+    } else {
+      setSelectedGenres([...selectedGenres, genre])
+    }
+  }
+
+  const handleFavoriteChange = () => {
+    fetchTitles() // Refetch titles to update favorite state after change
+  }
+
+  const handleWatchLaterChange = () => {
+    fetchTitles() // Refetch titles to update watch later state after change
+  }
+
   return (
-    <div className="flex h-screen bg-black text-white">
-      {/* Sidebar */}
-      <div className="w-16 md:w-64 bg-[#54f4d0] flex flex-col items-center md:items-start">
-        <div className="p-4 w-full">
-          <h1 className="text-black font-bold text-xl hidden md:block">Cinema Guru</h1>
-          <div className="md:hidden flex justify-center">
-            <Menu className="text-black" />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center md:items-start gap-6 mt-8 w-full">
-          <Link href="#" className="flex items-center gap-3 px-4 py-2 w-full">
-            <Home className="h-5 w-5 text-black" />
-            <span className="text-black hidden md:block">Home</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-2 w-full">
-            <Heart className="h-5 w-5 text-black" />
-            <span className="text-black hidden md:block">Favorites</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-2 w-full">
-            <Clock className="h-5 w-5 text-black" />
-            <span className="text-black hidden md:block">Watch Later</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-2 w-full">
-            <Settings className="h-5 w-5 text-black" />
-            <span className="text-black hidden md:block">Settings</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-2 w-full">
-            <Bell className="h-5 w-5 text-black" />
-            <span className="text-black hidden md:block">Notifications</span>
-          </Link>
-        </div>
-
-        {/* Activity Feed - Only visible on larger screens */}
-        <div className="hidden md:block mt-12 px-4 w-full">
-          <h3 className="text-black font-semibold text-sm mb-2">Latest Activities</h3>
-          <div className="text-xs text-black space-y-3">
-            {[1, 2, 3, 4, 5].map((item) => (
-              <div key={item} className="border-b border-black/10 pb-2">
-                <p className="font-medium">
-                  VICTORIA added the movie <span className="font-bold">Beyond the Surface</span> to watch later
-                </p>
-              </div>
-            ))}
-          </div>
+    <div className="flex flex-col bg-[#00003c]">
+      {/* Search + Filters */}
+      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+        <Input
+          placeholder="Search movies..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="bg-[#000061] border-[#1dd2af] text-[#9ca3af] rounded-full px-4 py-2 w-full sm:w-64"
+        />
+        <div className="flex gap-4">
+          <Input
+            type="number"
+            placeholder="Min Year"
+            value={minYear}
+            onChange={(e) => setMinYear(Number(e.target.value))}
+            className="w-32"
+          />
+          <Input
+            type="number"
+            placeholder="Max Year"
+            value={maxYear}
+            onChange={(e) => setMaxYear(Number(e.target.value))}
+            className="w-32"
+          />
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-[#000033] p-4">
-        <div className="flex justify-between items-center mb-6">
-          <div className="w-full max-w-md">
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-              <Input placeholder="Search" className="pl-8 bg-[#000033] border-[#4a5568] rounded-full text-white" />
-            </div>
-          </div>
-          <div className="hidden md:block text-xs text-[#54f4d0]">
-            <span>Welcome, person!</span> <span className="text-white">|</span>{" "}
-            <Link href="#" className="underline">
-              Sign Out
-            </Link>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="mb-8">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button
-              variant="outline"
-              className="rounded-full bg-[#54f4d0] text-black hover:bg-[#54f4d0]/80 border-none"
-            >
-              All
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-            >
-              Action
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-            >
-              Comedy
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-            >
-              Drama
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-            >
-              Horror
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#4a5568]">Year:</span>
-              <Button
-                variant="outline"
-                className="h-7 text-xs rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-              >
-                All
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#4a5568]">Rating:</span>
-              <Button
-                variant="outline"
-                className="h-7 text-xs rounded-full bg-transparent text-white border-[#4a5568] hover:bg-[#4a5568]/20"
-              >
-                All
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content Header */}
-        <h2 className="text-2xl font-bold mb-6">Favorites</h2>
-
-        {/* Movie Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[
-            { title: "After The Rain", image: "/placeholder.svg?height=400&width=300" },
-            { title: "Aurora's Light", image: "/placeholder.svg?height=400&width=300" },
-            { title: "Distant Shores", image: "/placeholder.svg?height=400&width=300" },
-            { title: "Crimson Legacy", image: "/placeholder.svg?height=400&width=300" },
-            { title: "Shadow Castle", image: "/placeholder.svg?height=400&width=300" },
-            { title: "Beyond the Surface", image: "/placeholder.svg?height=400&width=300" },
-          ].map((movie, index) => (
-            <div key={index} className="relative group overflow-hidden rounded-lg">
-              <Image
-                src={movie.image || "/placeholder.svg"}
-                alt={movie.title}
-                width={300}
-                height={400}
-                className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                <div className="p-4 w-full">
-                  <h3 className="text-white font-bold">{movie.title}</h3>
-                  <div className="flex gap-2 mt-2">
-                    <Button className="bg-[#54f4d0] text-black hover:bg-[#54f4d0]/80 text-xs px-3 py-1 h-7 rounded-full">
-                      Watch
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="border-white text-white hover:bg-white/20 text-xs px-3 py-1 h-7 rounded-full"
-                    >
-                      Info
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Genres */}
+      <div className="flex flex-wrap gap-2">
+        {GENRES.map((genre) => (
+          <Button
+            key={genre}
+            variant={selectedGenres.includes(genre) ? 'default' : 'outline'}
+            onClick={() => toggleGenre(genre)}
+            className="text-xs px-4 py-2 rounded-full"
+          >
+            {genre}
+          </Button>
+        ))}
       </div>
+
+      {/* Movie Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {titles.map((movie, index) => (
+          <div
+            key={movie.id}
+            ref={titles.length === index + 1 ? lastMovieRef : null}
+          >
+            <MovieCard
+              movie={movie}
+              onFavoriteChange={handleFavoriteChange}
+              onWatchLaterChange={handleWatchLaterChange}
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination Buttons */}
+      <div className="flex justify-center gap-4 mt-8">
+        <Button
+          disabled={page <= 1}
+          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          className='bg-[#54f4d0] text-[#000061] hover:bg-[#54f4d0]/80 text-sm px-6 py-2 rounded-l-full'
+        >
+          Previous
+        </Button>
+        <Button
+          onClick={() => setPage((prev) => prev + 1)}
+          disabled={!hasMore}
+          className="bg-[#54f4d0] text-[#000061] hover:bg-[#54f4d0]/80 text-sm px-6 py-2 rounded-r-full"
+        >
+          Next
+        </Button>
+      </div>
+
+      {loading && (
+        <p className="text-center mt-4 text-gray-400">Loading...</p>
+      )}
     </div>
   )
 }
-

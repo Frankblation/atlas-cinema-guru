@@ -17,7 +17,7 @@ export default function MovieCard({
   onWatchLaterChange,
 }: MovieCardProps) {
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-[#1DD2AF] bg-[#001F3F] shadow-lg transition-transform hover:scale-105">
+    <div className="relative group  rounded-xl overflow-hidden border border-[#1DD2AF] bg-[#001F3F] shadow-lg transition-transform hover:scale-105">
       {/* Floating Buttons */}
       <div className="absolute top-3 right-3 flex gap-2 z-20">
         <FavoriteButton
@@ -33,7 +33,7 @@ export default function MovieCard({
       </div>
 
       {/* Movie Image */}
-      <div className="relative w-full h-64 overflow-hidden">
+      <div className="relative w-full h-80 overflow-hidden">
         <Image
           src={movie.image || '/placeholder.svg'}
           alt={movie.title}
@@ -42,19 +42,17 @@ export default function MovieCard({
           className="object-cover w-full h-full transition-transform duration-300"
         />
 
-        {/* Genre Tag */}
-        <div className="absolute bottom-3 left-3 bg-[#1DD2AF] text-black text-xs font-semibold px-3 py-1 rounded-full z-10">
-          {movie.genre}
-        </div>
-
         {/* Hover Info Overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4 z-10">
+        <div className="absolute pt-6 inset-0 bg-[#000033] bg-opacity-80 opacity-0 group-hover:opacity-85 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-7 z-10">
           <h3 className="text-lg font-bold mb-2">
             {movie.title} ({movie.released})
           </h3>
           <p className="text-sm text-gray-300 line-clamp-4">
             {movie.synopsis}
           </p>
+          <div className="absolute bottom-3 left-3 bg-[#1DD2AF] text-black text-xs font-semibold px-3 py-1 rounded-full z-10">
+          {movie.genre}
+        </div>
         </div>
       </div>
     </div>

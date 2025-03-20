@@ -1,5 +1,6 @@
 'use client'
-
+import Image from "next/image";
+import FilmIcon from "@/assets/Icon/Outline/film.svg";
 import { signOut, useSession } from 'next-auth/react'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -11,10 +12,11 @@ export default function Header() {
     <header className="w-full h-16 px-6 bg-[#54f4d0] border-b border-[#00003C] flex items-center justify-between">
       {/* Left Side: Logo + App Name */}
       <div className="flex items-center gap-2">
-      <img
-          src="/assets/Icon/Outline/film.svg"
+      <Image
+          src={FilmIcon}
           alt="Cinema Guru Logo"
-          className="w-6 h-6"
+          width={24}
+          height={24}
         />
         <div className="text-xl font-bold text-[#00003C]">Cinema Guru</div>
       </div>

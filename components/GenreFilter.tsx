@@ -17,14 +17,19 @@ export default function GenreFilter({
     <div className="flex justify-end w-full">
       <div className="flex flex-wrap max-w-[400px] gap-2">
         {genres.map((genre) => (
-          <Button
-            key={genre}
-            variant={selectedGenres.includes(genre) ? 'default' : 'outline'}
-            onClick={() => onToggle(genre)}
-            className="text-xs px-4 py-2 rounded-full whitespace-nowrap"
-          >
-            {genre}
-          </Button>
+         <Button
+         key={genre}
+         onClick={() => onToggle(genre)}
+         className={`text-xs px-4 py-2 rounded-full whitespace-nowrap border
+           ${
+             selectedGenres.includes(genre)
+               ? 'bg-[#54f4d0] text-black border-[#54f4d0]'
+               : 'bg-transparent text-white border-[#54f4d0] hover:bg-[#54f4d0]/20'
+           }
+         `}
+       >
+         {genre}
+       </Button>
         ))}
       </div>
     </div>

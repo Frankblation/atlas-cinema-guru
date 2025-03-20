@@ -17,8 +17,7 @@ export default function MovieCard({
   onWatchLaterChange,
 }: MovieCardProps) {
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-blue-700 bg-[#001F3F] shadow-lg transition-transform hover:scale-105">
-      
+    <div className="relative group rounded-xl overflow-hidden border border-[#1DD2AF] bg-[#001F3F] shadow-lg transition-transform hover:scale-105">
       {/* Floating Buttons */}
       <div className="absolute top-3 right-3 flex gap-2 z-20">
         <FavoriteButton

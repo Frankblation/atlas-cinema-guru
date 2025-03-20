@@ -48,39 +48,32 @@ export default function CinemaGuruHomePage() {
   }, [loading, hasMore])
 
   // Fetch movies from the API
-  const fetchTitles = async (reset = false) => {
+  const fetchTitles = async (reset = false, pageNum = page) => {
     setLoading(true)
     try {
-      // Build params cleanly
       const params = new URLSearchParams()
-  
-      params.append('page', page.toString())
+      params.append('page', pageNum.toString()) // Use the explicit page number!
       params.append('minYear', minYear.toString())
       params.append('maxYear', maxYear.toString())
   
-      // Only add genres if something is selected
       if (selectedGenres.length > 0) {
         params.append('genres', selectedGenres.join(','))
       }
   
-      // Always add search (even if empty)
       params.append('search', search)
   
       const queryString = `/api/titles?${params.toString()}`
-  
-      console.log('🚀 Fetching:', queryString) // Debug output
+      console.log('🚀 Fetching:', queryString)
   
       const res = await fetch(queryString, { credentials: 'include' })
       const data = await res.json()
   
-      // Reset the list or append depending on pagination
       if (reset) {
         setTitles(data.title || [])
       } else {
         setTitles((prev) => [...prev, ...(data.title || [])])
       }
-
-      // Check if more pages exist
+  
       if (!data.title || data.title.length < 12) {
         setHasMore(false)
       } else {
@@ -103,15 +96,13 @@ export default function CinemaGuruHomePage() {
   // Refetch when filters/search change (reset to page 1)
   useEffect(() => {
     setPage(1)
-    fetchTitles(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchTitles(true, 1) // Fetch page 1 explicitly
   }, [search, minYear, maxYear, selectedGenres])
 
-  // Fetch next page when page changes (skip on initial load)
+
   useEffect(() => {
-    if (page === 1) return // Already fetched page 1 above
-    fetchTitles()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (page === 1) return
+    fetchTitles(false, page)
   }, [page])
 
   const toggleGenre = (genre: string) => {

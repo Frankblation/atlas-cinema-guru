@@ -1,70 +1,70 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import Image from 'next/image'
 
 interface Activity {
   id: string
   user_id: string
-  user_name: string
   title_id: string
-  movie_title: string
-  activity: string
+  activity: string // 'Favorited' or 'Added to Watch Later'
   timestamp: string
+  movie_title?: string
 }
 
 export default function LatestActivity() {
   const [activities, setActivities] = useState<Activity[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState(true)
+
+  const fetchActivities = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/activities?page=1', {
+        credentials: 'include'
+      })
+      const data = await res.json()
+
+      setActivities(data.activities || [])
+    } catch (error) {
+      console.error('❌ Error fetching activities:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const res = await fetch('/api/activities', { credentials: 'include' })
-        const data = await res.json()
-
-        // Assuming the backend returns related user + title data already
-        const formattedActivities = data.map((item: any) => ({
-          id: item.id,
-          user_id: item.userId,
-          user_name: item.user?.email || 'Unknown User', // change as per your schema
-          title_id: item.titleId,
-          movie_title: item.title?.title || 'Unknown Movie',
-          activity: item.activity,
-          timestamp: item.timestamp
-        }))
-
-        setActivities(formattedActivities)
-      } catch (error) {
-        console.error('Error fetching activities:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchActivities()
   }, [])
 
   return (
-    <div className="mt-12 px-4 w-full bg-blue-500">
-      <h3 className="text-black font-semibold text-lg mb-4">Latest Activities</h3>
+    <div className="bg-[#7CE6C9] rounded-xl px-4 py-6 w-full">
+      {/* Icon + Title */}
+      <div className="flex items-center mb-4">
+        <h3 className="text-[#00003C] text-sm font-bold uppercase tracking-wide">
+          Latest Activities
+        </h3>
+      </div>
 
+      {/* Activities List */}
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-xs text-[#00003C]">Loading activities...</p>
+      ) : activities.length === 0 ? (
+        <p className="text-xs text-[#00003C]">No recent activity found.</p>
       ) : (
-        <div className="space-y-4">
-          {activities.length === 0 && <p>No activities found.</p>}
-
+        <ul className="space-y-4">
           {activities.map((activity) => (
-            <div key={activity.id} className="flex justify-between items-center border-b border-black/10 pb-3">
-              <p className="font-medium text-sm text-gray-800">
-                <span className="font-bold">{activity.user_name}</span> {activity.activity} the movie{' '}
-                <span className="font-semibold">{activity.movie_title}</span> on{' '}
-                {format(new Date(activity.timestamp), 'MMM d, yyyy h:mm a')}.
+            <li key={activity.id} className="text-[#00003C] text-xs leading-snug">
+              <p className="font-medium">
+                {format(new Date(activity.timestamp), 'M/d/yyyy, h:mm:ss a')}
               </p>
-            </div>
+              <p>
+                {activity.activity}{' '}
+                <span className="font-bold">{activity.movie_title}</span>
+              </p>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   )

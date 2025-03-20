@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import MovieCard from '@/components/MovieCard'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import Filters from '@/components/Filters'
+import PaginationControls from '@/components/PaginationControls'
 
 interface Title {
   id: string
@@ -47,103 +47,120 @@ export default function CinemaGuruHomePage() {
     if (node) observer.current.observe(node)
   }, [loading, hasMore])
 
-  const fetchTitles = async () => {
+  // Fetch movies from the API
+  const fetchTitles = async (reset = false) => {
     setLoading(true)
-
     try {
-      const genreQuery = selectedGenres.join(',')
-      const res = await fetch(
-        `/api/titles?page=${page}&minYear=${minYear}&maxYear=${maxYear}&genres=${genreQuery}&search=${search}`,
-        { credentials: 'include' }
-      )
-
+      // Build params cleanly
+      const params = new URLSearchParams()
+  
+      params.append('page', page.toString())
+      params.append('minYear', minYear.toString())
+      params.append('maxYear', maxYear.toString())
+  
+      // Only add genres if something is selected
+      if (selectedGenres.length > 0) {
+        params.append('genres', selectedGenres.join(','))
+      }
+  
+      // Always add search (even if empty)
+      params.append('search', search)
+  
+      const queryString = `/api/titles?${params.toString()}`
+  
+      console.log('🚀 Fetching:', queryString) // Debug output
+  
+      const res = await fetch(queryString, { credentials: 'include' })
       const data = await res.json()
+  
+      // Reset the list or append depending on pagination
+      if (reset) {
+        setTitles(data.title || [])
+      } else {
+        setTitles((prev) => [...prev, ...(data.title || [])])
+      }
 
-      setTitles((prevTitles) => page === 1 ? data.title : [...prevTitles, ...data.title])
-
-      if (!data.title || data.title.length === 0) {
+      // Check if more pages exist
+      if (!data.title || data.title.length < 12) {
         setHasMore(false)
       } else {
         setHasMore(true)
       }
     } catch (error) {
-      console.error('Error fetching titles:', error)
+      console.error('❌ Error fetching titles:', error)
     } finally {
       setLoading(false)
     }
   }
 
+
+  // Initial fetch for page 1
+  useEffect(() => {
+    fetchTitles(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Refetch when filters/search change (reset to page 1)
   useEffect(() => {
     setPage(1)
-    fetchTitles()
+    fetchTitles(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGenres, minYear, maxYear, search])
+  }, [search, minYear, maxYear, selectedGenres])
 
+  // Fetch next page when page changes (skip on initial load)
   useEffect(() => {
+    if (page === 1) return // Already fetched page 1 above
     fetchTitles()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
 
   const toggleGenre = (genre: string) => {
-    if (selectedGenres.includes(genre)) {
-      setSelectedGenres(selectedGenres.filter((g) => g !== genre))
-    } else {
-      setSelectedGenres([...selectedGenres, genre])
-    }
+    setSelectedGenres((prev) =>
+      prev.includes(genre)
+        ? prev.filter((g) => g !== genre)
+        : [...prev, genre]
+    )
+  }
+
+  const handleClearFilters = () => {
+    setSearch('')
+    setMinYear(1990)
+    setMaxYear(2024)
+    setSelectedGenres([])
   }
 
   const handleFavoriteChange = () => {
-    fetchTitles() // Refetch titles to update favorite state after change
+    setPage(1)
+    fetchTitles(true)
   }
 
   const handleWatchLaterChange = () => {
-    fetchTitles() // Refetch titles to update watch later state after change
+    setPage(1)
+    fetchTitles(true)
   }
 
   return (
-    <div className="flex flex-col bg-[#00003c]">
-      {/* Search + Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-        <Input
-          placeholder="Search movies..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="bg-[#000061] border-[#1dd2af] text-[#9ca3af] rounded-full px-4 py-2 w-full sm:w-64"
-        />
-        <div className="flex gap-4">
-          <Input
-            type="number"
-            placeholder="Min Year"
-            value={minYear}
-            onChange={(e) => setMinYear(Number(e.target.value))}
-            className="w-32"
-          />
-          <Input
-            type="number"
-            placeholder="Max Year"
-            value={maxYear}
-            onChange={(e) => setMaxYear(Number(e.target.value))}
-            className="w-32"
-          />
-        </div>
-      </div>
+    <div className="flex flex-col bg-[#00003C] min-h-screen p-6">
+      {/* Filters */}
+      <Filters
+        genres={GENRES}
+        selectedGenres={selectedGenres}
+        onToggleGenre={toggleGenre}
+        search={search}
+        onSearchChange={setSearch}
+        minYear={minYear}
+        maxYear={maxYear}
+        onMinYearChange={setMinYear}
+        onMaxYearChange={setMaxYear}
+        onClearFilters={handleClearFilters}
+      />
 
-      {/* Genres */}
-      <div className="flex flex-wrap gap-2">
-        {GENRES.map((genre) => (
-          <Button
-            key={genre}
-            variant={selectedGenres.includes(genre) ? 'default' : 'outline'}
-            onClick={() => toggleGenre(genre)}
-            className="text-xs px-4 py-2 rounded-full"
-          >
-            {genre}
-          </Button>
-        ))}
-      </div>
+      {/* Movie Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        {titles.length === 0 && !loading && (
+          <p className="text-center col-span-full text-gray-400">No movies found!</p>
+        )}
 
-      {/* Movie Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {titles.map((movie, index) => (
           <div
             key={movie.id}
@@ -159,25 +176,14 @@ export default function CinemaGuruHomePage() {
       </div>
 
       {/* Pagination Buttons */}
-      <div className="flex justify-center gap-4 mt-8">
-        <Button
-          disabled={page <= 1}
-          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-          className='bg-[#54f4d0] text-[#000061] hover:bg-[#54f4d0]/80 text-sm px-6 py-2 rounded-l-full'
-        >
-          Previous
-        </Button>
-        <Button
-          onClick={() => setPage((prev) => prev + 1)}
-          disabled={!hasMore}
-          className="bg-[#54f4d0] text-[#000061] hover:bg-[#54f4d0]/80 text-sm px-6 py-2 rounded-r-full"
-        >
-          Next
-        </Button>
-      </div>
+      <PaginationControls
+        page={page}
+        hasMore={hasMore}
+        onPageChange={setPage}
+      />
 
       {loading && (
-        <p className="text-center mt-4 text-gray-400">Loading...</p>
+        <p className="text-center mt-4 text-gray-400">Loading movies...</p>
       )}
     </div>
   )

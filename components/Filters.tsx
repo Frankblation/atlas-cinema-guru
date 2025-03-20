@@ -31,7 +31,7 @@ export default function Filters({
   onClearFilters
 }: FiltersProps) {
   return (
-    <div className="flex flex-col gap-4 bg-[#000022] p-4 rounded-xl">
+    <div className="flex flex-col gap-4 bg-[#00003c] p-4 rounded-xl">
       {/* Search Input */}
       <div className="flex justify-between items-center gap-4">
         <Input
@@ -57,7 +57,7 @@ export default function Filters({
           placeholder="Min Year"
           value={minYear}
           onChange={(e) => onMinYearChange(Number(e.target.value))}
-          className="w-32 bg-[#000033] border-[#4a5568] text-white rounded-full px-4 py-2"
+          className="w-32 bg-[#00003c] border-[#4a5568] text-white rounded-full px-4 py-2"
         />
         <Input
           type="number"

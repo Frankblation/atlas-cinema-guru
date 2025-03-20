@@ -42,9 +42,9 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
+    <div className="flex flex-col min-h-screen bg-[#00003c] text-white">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-[#000022]">
+      <header className="flex items-center justify-center px-6 py-4 bg-[#00003c]">
         <h1 className="text-3xl font-bold">Favorites</h1>
       </header>
 

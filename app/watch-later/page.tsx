@@ -42,8 +42,8 @@ export default function WatchLaterPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
-      <header className="flex items-center justify-between px-6 py-4 bg-[#000022]">
+    <div className="flex flex-col min-h-screen bg-[#00003c] text-white">
+      <header className="flex items-center justify-center px-6 py-4 bg-[#00003c]">
         <h1 className="text-3xl font-bold">Watch Later</h1>
       </header>
 
